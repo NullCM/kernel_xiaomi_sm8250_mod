@@ -1,0 +1,88 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: 'Target Device Codename'
+        required: true
+        default: 'thyme'
+        type: choice
+        options:
+          - psyche
+          - thyme
+          - umi
+          - munch
+          - lmi
+          - cmi
+          - cas
+          - apollo
+          - alioth
+          - elish
+          - enuma
+          - dagu
+          - pipa
+      ksu:
+        description: 'Enable KernelSU (ReSukiSU-SuSFS)'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    name: Build Kernel for ${{ inputs.device }} (${{ inputs.ksu && 'KSU' || 'NoKSU' }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Cleanup Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git curl wget bison flex zip bc cpio libssl-dev ccache python-is-python3
+
+      - name: Setup Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache_mikernel
+          key: kernel-ccache-${{ inputs.device }}-${{ github.run_id }}
+          restore-keys: |
+            kernel-ccache-${{ inputs.device }}-
+            kernel-ccache-
+
+      - name: Setup Toolchain
+        run: |
+          mkdir -p $HOME/zyc-clang
+          cd $HOME/zyc-clang
+          wget -q https://github.com/ZyCromerZ/Clang/releases/download/16.0.6-20260807-release/Clang-16.0.6-20260807.tar.gz
+          tar -zxvf Clang-16.0.6-20260807.tar.gz
+
+      - name: Build Kernel
+        run: |
+          chmod +x build.sh
+          echo "Using script: build.sh"
+          
+          if [ "${{ inputs.ksu }}" == "true" ]; then
+            echo "Building with KernelSU..."
+            bash build.sh ${{ inputs.device }} ksu
+          else
+            echo "Building without KernelSU..."
+            bash build.sh ${{ inputs.device }}
+          fi
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kernel-${{ inputs.device }}-${{ inputs.ksu && 'KSU' || 'NoKSU' }}-${{ github.run_number }}
+          path: ./*.zip
+          if-no-files-found: error
