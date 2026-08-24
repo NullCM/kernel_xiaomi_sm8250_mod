@@ -372,8 +372,6 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
 	int res;
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
 
-	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
-		return -EINVAL;
 #ifdef CONFIG_KSU_SUSFS
 	if (likely(susfs_is_current_proc_no_su()))
 		goto orig_flow;
@@ -383,6 +381,8 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
 	}
 orig_flow:
 #endif
+	if (mode & ~S_IRWXO)	/* where's F_OK, X_OK, W_OK, R_OK? */
+		return -EINVAL;
 
 	override_cred = prepare_creds();
 	if (!override_cred)
