@@ -165,11 +165,11 @@ int vfs_statx_fd(unsigned int fd, struct kstat *stat,
 	if (f.file) {
 		error = vfs_getattr(&f.file->f_path, stat,
 				    request_mask, query_flags);
-		fdput(f);
 #ifdef CONFIG_KSU_SUSFS
 		if (static_branch_unlikely(&ksu_is_init_rc_hook_enabled))
 			ksu_handle_vfs_fstat(fd, &stat->size);
 #endif // #ifdef CONFIG_KSU_SUSFS
+		fdput(f);
 	}
 	return error;
 }
@@ -206,7 +206,7 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
 		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
 		return -EINVAL;
 #ifdef CONFIG_KSU_SUSFS
-	if (likely(susfs_is_current_proc_umounted()))
+	if (likely(susfs_is_current_proc_no_su()))
 		goto orig_flow;
 	if (static_branch_likely(&ksu_su_compat_enabled)) {
 		if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))
