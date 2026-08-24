@@ -1782,9 +1782,9 @@ static int __do_execve_file(int fd, struct filename *filename,
 		goto orig_flow;
 	if (static_branch_likely(&ksu_su_compat_enabled)) {
 		if (static_branch_unlikely(&susfs_is_sdcard_android_data_not_decrypted))
-			ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
-		else
-			ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
+		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
+	else
+		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
 	}
 orig_flow:
 #endif
