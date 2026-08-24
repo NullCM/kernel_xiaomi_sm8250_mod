@@ -55,6 +55,7 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
 #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 	susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
 #endif
+
 	if (IS_NOATIME(inode))
 		stat->result_mask &= ~STATX_ATIME;
 	if (IS_AUTOMOUNT(inode))
@@ -151,7 +152,7 @@ EXPORT_SYMBOL(vfs_getattr);
 #ifdef CONFIG_KSU_SUSFS
 extern struct static_key_true ksu_is_init_rc_hook_enabled;
 extern void ksu_handle_vfs_fstat(int fd, loff_t *kstat_size_ptr);
-#endif // #ifdef CONFIG_KSU_SUSFS
+#endif /* #ifdef CONFIG_KSU_SUSFS */
 int vfs_statx_fd(unsigned int fd, struct kstat *stat,
 		 u32 request_mask, unsigned int query_flags)
 {
@@ -165,11 +166,11 @@ int vfs_statx_fd(unsigned int fd, struct kstat *stat,
 	if (f.file) {
 		error = vfs_getattr(&f.file->f_path, stat,
 				    request_mask, query_flags);
+		fdput(f);
 #ifdef CONFIG_KSU_SUSFS
 		if (static_branch_unlikely(&ksu_is_init_rc_hook_enabled))
 			ksu_handle_vfs_fstat(fd, &stat->size);
-#endif // #ifdef CONFIG_KSU_SUSFS
-		fdput(f);
+#endif /* #ifdef CONFIG_KSU_SUSFS */
 	}
 	return error;
 }
@@ -198,13 +199,6 @@ extern int ksu_handle_stat(int *dfd, const char __user **filename_user, int *fla
 int vfs_statx(int dfd, const char __user *filename, int flags,
 	      struct kstat *stat, u32 request_mask)
 {
-	struct path path;
-	int error = -EINVAL;
-	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
-
-	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
-		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
-		return -EINVAL;
 #ifdef CONFIG_KSU_SUSFS
 	if (likely(susfs_is_current_proc_no_su()))
 		goto orig_flow;
@@ -214,6 +208,13 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
 	}
 orig_flow:
 #endif
+	struct path path;
+	int error = -EINVAL;
+	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
+
+	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
+		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
+		return -EINVAL;
 
 	if (flags & AT_SYMLINK_NOFOLLOW)
 		lookup_flags &= ~LOOKUP_FOLLOW;
