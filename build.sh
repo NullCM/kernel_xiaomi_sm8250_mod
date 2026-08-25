@@ -234,6 +234,22 @@ scripts/config --file out/.config \
 	-e TASK_DELAY_ACCT \
 	-e XIAOMI_MIUI
 
+echo "[+] Fixing SuSFS inline hook symbol issues for ReSukiSU..."
+
+# 1. 强制在相关文件头部包含 susfs_def.h，确保编译器能看到 static inline 定义
+sed -i '1a #include <linux/susfs_def.h>' drivers/kernelsu/hook/setuid_hook.c
+sed -i '1a #include <linux/susfs_def.h>' drivers/kernelsu/feature/sucompat.c
+
+# 2. 彻底删除可能残留的旧版 extern 声明（这些声明会误导链接器去寻找全局符号）
+sed -i '/extern.*susfs_set_current_proc_no_su/d' drivers/kernelsu/hook/setuid_hook.c
+sed -i '/extern.*susfs_clear_current_proc_no_su/d' drivers/kernelsu/hook/setuid_hook.c
+sed -i '/extern.*susfs_is_current_proc_no_su/d' drivers/kernelsu/hook/setuid_hook.c
+sed -i '/extern.*susfs_set_current_proc_umounted_for_zygote_next/d' drivers/kernelsu/hook/setuid_hook.c
+
+sed -i '/extern.*susfs_is_current_proc_no_su/d' drivers/kernelsu/feature/sucompat.c
+
+echo "[+] SuSFS inline hook fix applied successfully."
+
 make $MAKE_ARGS -j$(nproc)
 
 if [ -f "out/arch/arm64/boot/Image" ]; then
