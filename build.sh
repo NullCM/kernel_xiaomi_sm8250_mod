@@ -100,50 +100,10 @@ fi
 echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ "$KSU_ENABLE" -eq 1 ]; then
-    echo "KSU is enabled"
-    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
-
-    # ================= 终极 SUSFS 链接补丁 =================
-    echo "=== Patching SUSFS undefined symbols (Macro Override) ==="
-
-    # 1. 清理 KernelSU 头文件中可能存在的 extern 声明，防止冲突
-    TARGET_HEADERS=$(grep -rl "susfs_set_current_proc_no_su" drivers/kernelsu/ --include="*.h" 2>/dev/null)
-    if [ -n "$TARGET_HEADERS" ]; then
-        for header in $TARGET_HEADERS; do
-            echo "Cleaning extern declarations in $header"
-            sed -i '/susfs_set_current_proc_no_su/d' "$header"
-            sed -i '/susfs_clear_current_proc_no_su/d' "$header"
-            sed -i '/susfs_is_current_proc_no_su/d' "$header"
-            sed -i '/susfs_set_current_proc_umounted_for_zygote_next/d' "$header"
-        done
-    fi
-
-    # 2. 在调用的 .c 文件顶部注入宏定义，彻底消灭函数调用符号
-    read -r -d '' PATCH_CODE << 'EOF'
-#include <linux/susfs_def.h>
-#include <linux/thread_info.h>
-/* 强行用宏替换函数调用，避免链接外部符号 */
-#undef susfs_set_current_proc_no_su
-#define susfs_set_current_proc_no_su() do { set_thread_flag(TIF_PROC_NO_SU); } while(0)
-#undef susfs_clear_current_proc_no_su
-#define susfs_clear_current_proc_no_su() do { clear_thread_flag(TIF_PROC_NO_SU); } while(0)
-#undef susfs_is_current_proc_no_su
-#define susfs_is_current_proc_no_su() ({ likely(test_thread_flag(TIF_PROC_NO_SU)); })
-#undef susfs_set_current_proc_umounted_for_zygote_next
-#define susfs_set_current_proc_umounted_for_zygote_next() do { set_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT); } while(0)
-EOF
-
-    for c_file in drivers/kernelsu/hook/setuid_hook.c drivers/kernelsu/feature/sucompat.c; do
-        if [ -f "$c_file" ]; then
-            echo "Injecting macro overrides into $c_file"
-            echo "$PATCH_CODE" | cat - "$c_file" > temp && mv temp "$c_file"
-        fi
-    done
-    echo "=== SUSFS Patch Complete ==="
-    # =======================================================
-
+	echo "KSU is enabled"
+	curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
 else
-    echo "KSU is disabled"
+	echo "KSU is disabled"
 fi
 
 echo "Integrating Baseband-guard..."
