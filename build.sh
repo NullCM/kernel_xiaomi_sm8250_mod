@@ -195,6 +195,7 @@ if [ "$KSU_ENABLE" -eq 1 ]; then
 	-e KSU_SUSFS_SUS_MAP \
 	-e KSU_SUSFS_SUS_MOUNT \
 	-e KSU_SUSFS_SUS_PATH \
+	-e KSU_SUSFS_SUS_SU \
 	-e THREAD_INFO_IN_TASK
 else
 	scripts/config --file out/.config -d KSU
