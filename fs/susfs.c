@@ -20,7 +20,6 @@
 #include <linux/workqueue.h>
 #include <linux/fsnotify_backend.h>
 #include <linux/jump_label.h>
-#include <linux/version.h> // We need check kernel version.
 #include <linux/susfs.h>
 #include "fuse/fuse_i.h"
 #include "mount.h"
@@ -76,17 +75,17 @@ void susfs_add_sus_path(void __user **user_info) {
 			info.err = -ENOENT;
 			goto out_path_put_path;
 		}
-		set_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state);
-		set_bit(AS_FLAGS_SUS_PATH, &inode->i_state);
-		SUSFS_LOGI("flagged AS_FLAGS_SUS_PATH on pathname: '%s', fi->nodeid: %llu, fi->inode.i_ino: %lu, fi->inode.i_state: 0x%lx\n",
-					info.target_pathname, fi->nodeid, fi->inode.i_ino, fi->inode.i_state);
+		set_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_mapping->flags);
+		set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
+		SUSFS_LOGI("flagged AS_FLAGS_SUS_PATH on pathname: '%s', fi->nodeid: %llu, fi->inode.i_ino: %lu, fi->inode.i_mapping->flags: 0x%lx\n", 
+					info.target_pathname, fi->nodeid, fi->inode.i_ino, fi->inode.i_mapping->flags);
 		info.err = 0;
 		goto out_path_put_path;
 	}
 
-	set_bit(AS_FLAGS_SUS_PATH, &inode->i_state);
-	SUSFS_LOGI("flagged AS_FLAGS_SUS_PATH on pathname: '%s', ino: '%lu', inode->i_state: 0x%lx\n",
-				info.target_pathname, inode->i_ino, inode->i_state);
+	set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
+	SUSFS_LOGI("flagged AS_FLAGS_SUS_PATH on pathname: '%s', ino: '%lu', inode->i_mapping->flags: 0x%lx\n",
+				info.target_pathname, inode->i_ino, inode->i_mapping->flags);
 	info.err = 0;
 out_path_put_path:
 	path_put(&path);
@@ -156,14 +155,14 @@ static void susfs_run_sus_path_loop(void) {
 					path_put(&path);
 					continue;
 				}
-				set_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state);
-				set_bit(AS_FLAGS_SUS_PATH, &inode->i_state);
-				SUSFS_LOGI("re-flag AS_FLAGS_SUS_PATH on path '%s', fi->inode.i_ino: '%lu', fi->inode.i_state: 0x%lx\n",
-						cursor->target_pathname, fi->inode.i_ino, fi->inode.i_state);
+				set_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_mapping->flags);
+				set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
+				SUSFS_LOGI("re-flag AS_FLAGS_SUS_PATH on path '%s', fi->inode.i_ino: '%lu', fi->inode.i_mapping->flags: 0x%lx\n",
+						cursor->target_pathname, fi->inode.i_ino, fi->inode.i_mapping->flags);
 			} else {
-				set_bit(AS_FLAGS_SUS_PATH, &inode->i_state);
-				SUSFS_LOGI("re-flag AS_FLAGS_SUS_PATH on path '%s', inode->i_ino: '%lu', inode->i_state: 0x%lx\n",
-						cursor->target_pathname, inode->i_ino, inode->i_state);
+				set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
+				SUSFS_LOGI("re-flag AS_FLAGS_SUS_PATH on path '%s', inode->i_ino: '%lu', inode->i_mapping->flags: 0x%lx\n",
+						cursor->target_pathname, inode->i_ino, inode->i_mapping->flags);
 			}
 			path_put(&path);
 		}
@@ -200,13 +199,13 @@ bool susfs_is_inode_sus_path(struct inode *inode)
 			return false;
 		}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state) &&
+		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_mapping->flags) &&
 			is_i_uid_not_allowed(i_uid_into_vfsuid(idmap, &fi->inode).val)))
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
-		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state) &&
+		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_mapping->flags) &&
 			is_i_uid_not_allowed(i_uid_into_mnt(i_user_ns(&fi->inode), &fi->inode).val)))
 #else
-		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_state) &&
+		if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &fi->inode.i_mapping->flags) &&
 			is_i_uid_not_allowed(fi->inode.i_uid.val)))
 #endif
 		{
@@ -216,13 +215,13 @@ bool susfs_is_inode_sus_path(struct inode *inode)
 		return false;
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_state) &&
+	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags) &&
 		is_i_uid_not_allowed(i_uid_into_vfsuid(idmap, inode).val)))
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
-	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_state) &&
+	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags) &&
 		is_i_uid_not_allowed(i_uid_into_mnt(i_user_ns(inode), inode).val)))
 #else
-	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_state) &&
+	if (unlikely(test_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags) &&
 		is_i_uid_not_allowed(inode->i_uid.val)))
 #endif
 	{
@@ -298,20 +297,20 @@ static int susfs_mark_inode_sus_kstat(char *target_pathname, struct st_susfs_sus
 			err = -ENOENT;
 			goto out_path_put_path;
 		}
-		set_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_state);
+		set_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_mapping->flags);
 		new_entry->is_fuse = true;
 		new_entry->target_dev = fi->inode.i_sb->s_dev;
-		SUSFS_LOGI("flagged AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, fi->inode.i_sb->s_dev: %u, fi->nodeid: %llu, fi->inode.i_ino: %lu, fi->inode.i_state: 0x%lx\n",
-					target_pathname, new_entry->is_fuse, fi->inode.i_sb->s_dev, fi->nodeid, fi->inode.i_ino, fi->inode.i_state);
+		SUSFS_LOGI("flagged AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, fi->inode.i_sb->s_dev: %u, fi->nodeid: %llu, fi->inode.i_ino: %lu, fi->inode.i_mapping->flags: 0x%lx\n",
+					target_pathname, new_entry->is_fuse, fi->inode.i_sb->s_dev, fi->nodeid, fi->inode.i_ino, fi->inode.i_mapping->flags);
 		err = 0;
 		goto out_path_put_path;
 	}
 
-	set_bit(AS_FLAGS_SUS_KSTAT, &inode->i_state);
+	set_bit(AS_FLAGS_SUS_KSTAT, &inode->i_mapping->flags);
 	new_entry->is_fuse = false;
 	new_entry->target_dev = inode->i_sb->s_dev;
-	SUSFS_LOGI("flagged AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, inode->i_sb->s_dev: %u,  inode->i_ino: %lu, inode->i_state: 0x%lx\n",
-				target_pathname, new_entry->is_fuse, inode->i_sb->s_dev, inode->i_ino, inode->i_state);
+	SUSFS_LOGI("flagged AS_FLAGS_SUS_KSTAT on pathname: '%s', is_fuse: %d, inode->i_sb->s_dev: %u,  inode->i_ino: %lu, inode->i_mapping->flags: 0x%lx\n",
+				target_pathname, new_entry->is_fuse, inode->i_sb->s_dev, inode->i_ino, inode->i_mapping->flags);
 		
 out_path_put_path:
 	path_put(&path);
@@ -500,7 +499,7 @@ void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *s
 			SUSFS_LOGE("fi || fi->inode.i_mapping is NULL\n");
 			return;
 		}
-		if (!test_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_state) ||
+		if (!test_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_mapping->flags) ||
 			!susfs_is_current_proc_umounted_app())
 			return;
 		target_ino = fi->inode.i_ino;
@@ -514,7 +513,7 @@ void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *s
 		return;
 	}
 
-	if (!test_bit(AS_FLAGS_SUS_KSTAT, &inode->i_state) ||
+	if (!test_bit(AS_FLAGS_SUS_KSTAT, &inode->i_mapping->flags) ||
 	    !susfs_is_current_proc_umounted_app())
 		return;
 
@@ -573,7 +572,7 @@ void susfs_sus_kstat_spoof_show_map_vma(struct inode *inode, dev_t *out_dev, uns
 			SUSFS_LOGE("fi || fi->inode.i_mapping is NULL\n");
 			return;
 		}
-		if (!test_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_state) ||
+		if (!test_bit(AS_FLAGS_SUS_KSTAT, &fi->inode.i_mapping->flags) ||
 			!susfs_is_current_proc_umounted_app())
 			return;
 		target_ino = fi->inode.i_ino;
@@ -587,7 +586,7 @@ void susfs_sus_kstat_spoof_show_map_vma(struct inode *inode, dev_t *out_dev, uns
 		return;
 	}
 
-	if (!test_bit(AS_FLAGS_SUS_KSTAT, &inode->i_state) ||
+	if (!test_bit(AS_FLAGS_SUS_KSTAT, &inode->i_mapping->flags) ||
 		!susfs_is_current_proc_umounted_app())
 		return;
 
@@ -896,8 +895,8 @@ void susfs_add_open_redirect(void __user **user_info) {
 		hash_add_rcu(OPEN_REDIRECT_HLIST, &new_entry_target->node, new_entry_target->target_ino);
 		hash_add_rcu(OPEN_REDIRECT_HLIST, &new_entry_redirected->node, new_entry_redirected->target_ino);
 		// we need to mark both target and redirected path inode just for spoofing readlink as well
-		set_bit(AS_FLAGS_OPEN_REDIRECT, &redirected_inode->i_state);
-		set_bit(AS_FLAGS_OPEN_REDIRECT, &target_inode->i_state);
+		set_bit(AS_FLAGS_OPEN_REDIRECT, &redirected_inode->i_mapping->flags);
+		set_bit(AS_FLAGS_OPEN_REDIRECT, &target_inode->i_mapping->flags);
 		mutex_unlock(&susfs_mutex_lock_open_redirect);
 		synchronize_srcu(&susfs_srcu_open_redirect);
 		if (is_second_dup_found)
@@ -914,8 +913,8 @@ void susfs_add_open_redirect(void __user **user_info) {
 	hash_add_rcu(OPEN_REDIRECT_HLIST, &new_entry_target->node, new_entry_target->target_ino);
 	hash_add_rcu(OPEN_REDIRECT_HLIST, &new_entry_redirected->node, new_entry_redirected->target_ino);
 	// we need to mark both target and redirected path inode just for spoofing readlink as well
-	set_bit(AS_FLAGS_OPEN_REDIRECT, &redirected_inode->i_state);
-	set_bit(AS_FLAGS_OPEN_REDIRECT, &target_inode->i_state);
+	set_bit(AS_FLAGS_OPEN_REDIRECT, &redirected_inode->i_mapping->flags);
+	set_bit(AS_FLAGS_OPEN_REDIRECT, &target_inode->i_mapping->flags);
 	mutex_unlock(&susfs_mutex_lock_open_redirect);
 	info.err = 0;
 
@@ -1113,7 +1112,7 @@ void susfs_add_sus_map(void __user **user_info) {
 		info.err = -ENOENT;
 		goto out_path_put_path;
 	}
-	set_bit(AS_FLAGS_SUS_MAP, &inode->i_state);
+	set_bit(AS_FLAGS_SUS_MAP, &inode->i_mapping->flags);
 	SUSFS_LOGI("pathname: '%s', is flagged as AS_FLAGS_SUS_MAP\n", info.target_pathname);
 	info.err = 0;
 out_path_put_path:
@@ -1357,10 +1356,12 @@ static int watch_one_dir(struct watch_dir *wd)
  * synchronize_srcu on the same SRCU struct, causing a permanent deadlock).
  * Cleanup is deferred to a delayed_work that runs outside the SRCU context.
  */
-static SUSFS_DECL_FSNOTIFY_OPS(susfs_handle_sdcard_inode_event)
+static int susfs_handle_sdcard_inode_event(struct fsnotify_mark *mark, u32 mask,
+											struct inode *inode, struct inode *dir,
+											const struct qstr *file_name, u32 cookie)
 {
-	if (!file_name || strlen((const char *)file_name) != 7 ||
-	    memcmp(file_name, "Android", 7))
+	if (!file_name || file_name->len != 7 ||
+	    memcmp(file_name->name, "Android", 7))
 		return 0;
 
 	if (test_and_set_bit(0, &sdcard_cleanup_scheduled))
@@ -1373,46 +1374,26 @@ static SUSFS_DECL_FSNOTIFY_OPS(susfs_handle_sdcard_inode_event)
 }
 
 static const struct fsnotify_ops fsnotify_ops = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 9, 0)
 	.handle_inode_event = susfs_handle_sdcard_inode_event,
-#else
-	.handle_event = susfs_handle_sdcard_inode_event,
-#endif
 };
-
-static void __maybe_unused m_free(struct fsnotify_mark *m)
-{
-	if (m) {
-		kfree(m);
-	}
-}
 
 static int add_mark_on_inode(struct inode *inode, u32 mask,
 								struct fsnotify_mark **out)
 {
 	struct fsnotify_mark *m;
-	int ret;
 
 	m = kzalloc(sizeof(*m), GFP_KERNEL);
 	if (!m)
 		return -ENOMEM;
 
-/* From KernelSU */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 18, 0)
-	fsnotify_init_mark(m, g);
-	m->mask = mask;
-	ret = fsnotify_add_inode_mark(m, inode, 0);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
-	fsnotify_init_mark(m, g);
-	m->mask = mask;
-	ret = fsnotify_add_mark(m, inode, NULL, 0);
+	#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+fsnotify_init_mark(m, g);
 #else
-	fsnotify_init_mark(m, m_free);
-	m->mask = mask;
-	ret = fsnotify_add_mark(m, g, inode, NULL, 0);
+fsnotify_init_mark(m);
 #endif
+	m->mask = mask;
 
-	if (ret) {
+	if (fsnotify_add_inode_mark(m, inode, 0)) {
 		fsnotify_put_mark(m);
 		return -EINVAL;
 	}
