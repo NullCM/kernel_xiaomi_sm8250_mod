@@ -149,27 +149,27 @@ struct fsnotify_mark *vfsmount_mark, u32 mask, void *data,    \
 int data_type, susfs_fname_t file_name, u32 cookie)
 #endif
 
-inline bool susfs_is_current_proc_umounted(void) {
+static inline bool susfs_is_current_proc_umounted(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
 }
 
-inline void susfs_set_current_proc_umounted(void) {
+static inline void susfs_set_current_proc_umounted(void) {
 	set_thread_flag(TIF_PROC_UMOUNTED);
 }
 
-inline void susfs_clear_current_proc_umounted(void) {
+static inline void susfs_clear_current_proc_umounted(void) {
 	clear_thread_flag(TIF_PROC_UMOUNTED);
 }
 
-inline bool susfs_is_current_proc_umounted_for_zygote_next(void) {
+static inline bool susfs_is_current_proc_umounted_for_zygote_next(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT)));
 }
 
-inline void susfs_set_current_proc_umounted_for_zygote_next(void) {
+static inline void susfs_set_current_proc_umounted_for_zygote_next(void) {
 	set_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
 }
 
-inline void susfs_clear_current_proc_umounted_for_zygote_next(void) {
+static inline void susfs_clear_current_proc_umounted_for_zygote_next(void) {
 	clear_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
 }
 
@@ -182,15 +182,15 @@ static inline bool susfs_is_current_proc_umounted_app(void) {
 #endif
 }
 
-inline bool susfs_is_current_proc_no_su(void) {
+static inline bool susfs_is_current_proc_no_su(void) {
 	return (likely(test_thread_flag(TIF_PROC_NO_SU)));
 }
 
-inline void susfs_set_current_proc_no_su(void) {
+static inline void susfs_set_current_proc_no_su(void) {
 	set_thread_flag(TIF_PROC_NO_SU);
 }
 
-inline void susfs_clear_current_proc_no_su(void) {
+static inline void susfs_clear_current_proc_no_su(void) {
 	clear_thread_flag(TIF_PROC_NO_SU);
 }
 
