@@ -102,9 +102,6 @@ echo "TARGET_DEVICE: $TARGET_DEVICE"
 if [ "$KSU_ENABLE" -eq 1 ]; then
 	echo "KSU is enabled"
 	curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
-	sed -i '1s/^/#include <linux\/susfs_def.h>\n/' drivers/kernelsu/hook/setuid_hook.c
-	sed -i '1s/^/#include <linux\/susfs_def.h>\n/' drivers/kernelsu/feature/sucompat.c
-
 else
 	echo "KSU is disabled"
 fi
