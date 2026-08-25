@@ -239,3 +239,20 @@ void susfs_start_sdcard_monitor_fn(void);
 void susfs_init(void);
 
 #endif
+
+void susfs_set_current_proc_no_su(bool enable) {
+}
+EXPORT_SYMBOL(susfs_set_current_proc_no_su);
+
+void susfs_set_current_proc_umounted_for_zygote_next(void) {
+}
+EXPORT_SYMBOL(susfs_set_current_proc_umounted_for_zygote_next);
+
+void susfs_clear_current_proc_no_su(void) {
+}
+EXPORT_SYMBOL(susfs_clear_current_proc_no_su);
+
+bool susfs_is_current_proc_no_su(void) {
+    return false;
+}
+EXPORT_SYMBOL(susfs_is_current_proc_no_su);
