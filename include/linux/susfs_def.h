@@ -70,8 +70,6 @@
  */
  // thread_info->flags is unsigned long :D
 #define TIF_PROC_UMOUNTED 33
-#define TIF_PROC_NO_SU 34
-#define TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT 35
 
 #define AS_FLAGS_SUS_PATH 33
 #define AS_FLAGS_SUS_MOUNT 34
@@ -149,19 +147,22 @@ struct fsnotify_mark *vfsmount_mark, u32 mask, void *data,    \
 int data_type, susfs_fname_t file_name, u32 cookie)
 #endif
 
-bool susfs_is_current_proc_umounted(void);
-void susfs_set_current_proc_umounted(void);
-void susfs_clear_current_proc_umounted(void);
+static inline bool susfs_is_current_proc_umounted(void) {
+	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
+}
 
-bool susfs_is_current_proc_umounted_for_zygote_next(void);
-void susfs_set_current_proc_umounted_for_zygote_next(void);
-void susfs_clear_current_proc_umounted_for_zygote_next(void);
+static inline void susfs_set_current_proc_umounted(void) {
+	set_thread_flag(TIF_PROC_UMOUNTED);
+}
 
-bool susfs_is_current_proc_umounted_app(void);
-
-bool susfs_is_current_proc_no_su(void);
-void susfs_set_current_proc_no_su(void);
-void susfs_clear_current_proc_no_su(void);
+static inline bool susfs_is_current_proc_umounted_app(void) {
+	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)) &&
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+			__kuid_val(current_uid()) >= 10000);
+#else
+			current_uid().val >= 10000);
+#endif
+}
 
 #define SUSFS_IS_INODE_SUS_MAP(inode) \
 		inode && inode->i_mapping && \
