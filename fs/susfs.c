@@ -1486,18 +1486,5 @@ void susfs_init(void) {\
 	SUSFS_LOGI("susfs is initialized! version: " SUSFS_VERSION " \n");
 }
 
-/* Stub functions for compatibility with ReSukiSU v4.2.0 */
-void susfs_set_current_proc_no_su(void) { }
-EXPORT_SYMBOL(susfs_set_current_proc_no_su);
-
-void susfs_set_current_proc_umounted_for_zygote_next(void) { }
-EXPORT_SYMBOL(susfs_set_current_proc_umounted_for_zygote_next);
-
-void susfs_clear_current_proc_no_su(void) { }
-EXPORT_SYMBOL(susfs_clear_current_proc_no_su);
-
-bool susfs_is_current_proc_no_su(void) { return false; }
-EXPORT_SYMBOL(susfs_is_current_proc_no_su);
-
 /* No module exit is needed becuase it should never be a loadable kernel module */
 //void __init susfs_exit(void)
