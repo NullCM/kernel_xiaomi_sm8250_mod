@@ -100,10 +100,19 @@ fi
 echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ "$KSU_ENABLE" -eq 1 ]; then
-echo "KSU is enabled"
-curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s b2ac2fc8703ce9f5226e2a38a59f8b72f8a3005c
+    echo "KSU is enabled"
+    
+    # 1. 先执行官方脚本，让它完成克隆、创建软链接及修改 Makefile/Kconfig 等基础工作
+    curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+    
+    # 2. 强制回退到指定的稳定 Commit，避开最新版的编译错误
+    echo "Switching to specific commit b2ac2fc..."
+    cd KernelSU
+    git fetch origin
+    git checkout b2ac2fc8703ce9f5226e2a38a59f8b72f8a3005c
+    cd ..
 else
-echo "KSU is disabled"
+    echo "KSU is disabled"
 fi
 
 echo "Integrating Baseband-guard..."
