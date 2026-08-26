@@ -100,10 +100,10 @@ fi
 echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ "$KSU_ENABLE" -eq 1 ]; then
-	echo "KSU is enabled"
-	curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+echo "KSU is enabled"
+curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s b2ac2fc8703ce9f5226e2a38a59f8b72f8a3005c
 else
-	echo "KSU is disabled"
+echo "KSU is disabled"
 fi
 
 echo "Integrating Baseband-guard..."
