@@ -149,31 +149,31 @@ struct fsnotify_mark *vfsmount_mark, u32 mask, void *data,    \
 int data_type, susfs_fname_t file_name, u32 cookie)
 #endif
 
-static inline bool susfs_is_current_proc_umounted(void) {
+extern bool susfs_is_current_proc_umounted(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
 }
 
-static inline void susfs_set_current_proc_umounted(void) {
+extern void susfs_set_current_proc_umounted(void) {
 	set_thread_flag(TIF_PROC_UMOUNTED);
 }
 
-static inline void susfs_clear_current_proc_umounted(void) {
+extern void susfs_clear_current_proc_umounted(void) {
 	clear_thread_flag(TIF_PROC_UMOUNTED);
 }
 
-static inline bool susfs_is_current_proc_umounted_for_zygote_next(void) {
+extern bool susfs_is_current_proc_umounted_for_zygote_next(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT)));
 }
 
-static inline void susfs_set_current_proc_umounted_for_zygote_next(void) {
+extern void susfs_set_current_proc_umounted_for_zygote_next(void) {
 	set_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
 }
 
-static inline void susfs_clear_current_proc_umounted_for_zygote_next(void) {
+extern void susfs_clear_current_proc_umounted_for_zygote_next(void) {
 	clear_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
 }
 
-static inline bool susfs_is_current_proc_umounted_app(void) {
+extern bool susfs_is_current_proc_umounted_app(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)) &&
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 			__kuid_val(current_uid()) >= 10000);
@@ -182,15 +182,15 @@ static inline bool susfs_is_current_proc_umounted_app(void) {
 #endif
 }
 
-static inline bool susfs_is_current_proc_no_su(void) {
+extern bool susfs_is_current_proc_no_su(void) {
 	return (likely(test_thread_flag(TIF_PROC_NO_SU)));
 }
 
-static inline void susfs_set_current_proc_no_su(void) {
+extern void susfs_set_current_proc_no_su(void) {
 	set_thread_flag(TIF_PROC_NO_SU);
 }
 
-static inline void susfs_clear_current_proc_no_su(void) {
+extern void susfs_clear_current_proc_no_su(void) {
 	clear_thread_flag(TIF_PROC_NO_SU);
 }
 
