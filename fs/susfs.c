@@ -22,7 +22,6 @@
 #include <linux/jump_label.h>
 #include <linux/version.h> // We need check kernel version.
 #include <linux/susfs.h>
-#include <linux/export.h>
 #include "fuse/fuse_i.h"
 #include "mount.h"
 
@@ -1486,62 +1485,6 @@ void susfs_init(void) {\
 	INIT_WORK(&susfs_extra_works, susfs_run_extra_works);
 	SUSFS_LOGI("susfs is initialized! version: " SUSFS_VERSION " \n");
 }
-
-/* Exported thread flag helpers for KernelSU */
-bool susfs_is_current_proc_umounted(void) {
-	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
-}
-EXPORT_SYMBOL(susfs_is_current_proc_umounted);
-
-void susfs_set_current_proc_umounted(void) {
-	set_thread_flag(TIF_PROC_UMOUNTED);
-}
-EXPORT_SYMBOL(susfs_set_current_proc_umounted);
-
-void susfs_clear_current_proc_umounted(void) {
-	clear_thread_flag(TIF_PROC_UMOUNTED);
-}
-EXPORT_SYMBOL(susfs_clear_current_proc_umounted);
-
-bool susfs_is_current_proc_umounted_for_zygote_next(void) {
-	return (likely(test_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT)));
-}
-EXPORT_SYMBOL(susfs_is_current_proc_umounted_for_zygote_next);
-
-void susfs_set_current_proc_umounted_for_zygote_next(void) {
-	set_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
-}
-EXPORT_SYMBOL(susfs_set_current_proc_umounted_for_zygote_next);
-
-void susfs_clear_current_proc_umounted_for_zygote_next(void) {
-	clear_thread_flag(TIF_PROC_UMOUNTED_FOR_ZYGOTE_NEXT);
-}
-EXPORT_SYMBOL(susfs_clear_current_proc_umounted_for_zygote_next);
-
-bool susfs_is_current_proc_umounted_app(void) {
-	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)) &&
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
-	__kuid_val(current_uid()) >= 10000);
-#else
-	current_uid().val >= 10000);
-#endif
-}
-EXPORT_SYMBOL(susfs_is_current_proc_umounted_app);
-
-bool susfs_is_current_proc_no_su(void) {
-	return (likely(test_thread_flag(TIF_PROC_NO_SU)));
-}
-EXPORT_SYMBOL(susfs_is_current_proc_no_su);
-
-void susfs_set_current_proc_no_su(void) {
-	set_thread_flag(TIF_PROC_NO_SU);
-}
-EXPORT_SYMBOL(susfs_set_current_proc_no_su);
-
-void susfs_clear_current_proc_no_su(void) {
-	clear_thread_flag(TIF_PROC_NO_SU);
-}
-EXPORT_SYMBOL(susfs_clear_current_proc_no_su);
 
 /* No module exit is needed becuase it should never be a loadable kernel module */
 //void __init susfs_exit(void)
