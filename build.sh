@@ -106,17 +106,39 @@ else
 	echo "KSU is disabled"
 fi
 
+# ===== 修复 susfs_def.h 缺失 =====
+echo "[*] Patching KernelSU sources for susfs_def.h..."
+
+# 解析符号链接的真实路径，确保文件可访问
+KSU_REAL_DIR="$(readlink -f drivers/kernelsu 2>/dev/null || true)"
+if [ -z "$KSU_REAL_DIR" ] || [ ! -d "$KSU_REAL_DIR" ]; then
+  echo "[!] WARNING: drivers/kernelsu symlink not resolvable, trying direct path"
+  KSU_REAL_DIR="KernelSU/kernel"
+fi
+
+echo "[*] KernelSU real dir: $KSU_REAL_DIR"
+
 KSU_FILES=(
-    "drivers/kernelsu/hook/setuid_hook.c"
-    "drivers/kernelsu/feature/sucompat.c"
+  "${KSU_REAL_DIR}/hook/setuid_hook.c"
+  "${KSU_REAL_DIR}/feature/sucompat.c"
 )
 
 for f in "${KSU_FILES[@]}"; do
-    [ -f "$f" ] || continue
-    grep -q 'susfs_def\.h' "$f" && continue
-    sed -i '0,/^#include[[:space:]]*<linux\//s//#ifdef CONFIG_KSU_SUSFS\n#include <linux\/susfs_def.h>\n#endif\n#include <linux\//' "$f"
-    echo "[+] Added susfs_def.h include to $f"
+  if [ ! -f "$f" ]; then
+    echo "[!] SKIP: $f not found"
+    continue
+  fi
+
+  if grep -q 'linux/susfs_def\.h' "$f"; then
+    echo "[*] SKIP: $f already contains susfs_def.h"
+    continue
+  fi
+
+  # 在文件第一个 #include 行之前插入
+  sed -i '1s/^/#ifdef CONFIG_KSU_SUSFS\n#include <linux\/susfs_def.h>\n#endif\n/' "$f"
+  echo "[+] Added susfs_def.h include to $f"
 done
+# ===== 修复结束 =====
 
 echo "Integrating Baseband-guard..."
 curl -LSs "https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh" | bash
