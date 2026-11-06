@@ -92,7 +92,7 @@ clang --version
 KSU_ZIP_STR=NoKernelSU
 if [ "$2" = "ksu" ]; then
 	KSU_ENABLE=1
-	KSU_ZIP_STR=ReSukiSU-SuSFS
+	KSU_ZIP_STR=ReSukiSU-SUSFS
 else
 	KSU_ENABLE=0
 fi
@@ -111,14 +111,21 @@ curl -LSs "https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh" | ba
 sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
 
 echo "Cleaning..."
+
 rm -rf out/
 rm -rf anykernel/
 
-echo "[*] Cloning AnyKernel3..."
+echo "Clone AnyKernel3 for packing kernel (repo: https://github.com/liyafe1997/AnyKernel3)"
 git clone https://github.com/liyafe1997/AnyKernel3 -b kona --single-branch --depth=1 anykernel
-echo "[+] AnyKernel3 cloned successfully."
+
+# Add date to local version
+local_version_str="-perf"
+local_version_date_str="-$(date +%Y%m%d)-${GIT_COMMIT_ID}-perf"
+
+sed -i "s/${local_version_str}/${local_version_date_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
 
 # ------------- Building for MIUI -------------
+
 echo "Clearning [out/] and build for MIUI....."
 rm -rf out/
 
@@ -251,20 +258,26 @@ rm -rf "${dts_source}"
 mv .dts.bak "${dts_source}"
 
 rm -rf anykernel/kernels/
-mkdir -p anykernel/kernels/miui/
+mkdir -p anykernel/kernels/
 
-cp out/arch/arm64/boot/Image anykernel/kernels/miui/
-cp out/arch/arm64/boot/dtb anykernel/kernels/miui/
-cp out/arch/arm64/boot/dtbo.img anykernel/kernels/miui/
+cp out/arch/arm64/boot/Image anykernel/kernels/
+cp out/arch/arm64/boot/dtb anykernel/kernels/
 
 echo "Build for MIUI finished."
+
+# Restore local version string
+sed -i "s/${local_version_date_str}/${local_version_str}/g" arch/arm64/configs/${TARGET_DEVICE}_defconfig
 
 # ------------- End of Building for MIUI -------------
 
 cd anykernel
-ZIP_FILENAME=APTKernel_MIUI_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3_${GIT_COMMIT_ID}.zip
-zip -r9 "$ZIP_FILENAME" ./* -x .git .gitignore out/ ./*.zip
-mv "$ZIP_FILENAME" ../
+
+ZIP_FILENAME=Kernel_MIUI_${TARGET_DEVICE}_${KSU_ZIP_STR}_$(date +'%Y%m%d_%H%M%S')_anykernel3_${GIT_COMMIT_ID}.zip
+
+zip -r9 $ZIP_FILENAME ./* -x .git .gitignore out/ ./*.zip
+
+mv $ZIP_FILENAME ../
+
 cd ..
 
 echo "Done. The flashable zip is: [./$ZIP_FILENAME]"
