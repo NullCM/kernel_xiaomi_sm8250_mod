@@ -110,6 +110,14 @@ echo "Integrating Baseband-guard..."
 curl -LSs "https://github.com/vc-teahouse/Baseband-guard/raw/main/setup.sh" | bash
 sed -i '/^config LSM$/,/^help$/{ /^[[:space:]]*default/ { /baseband_guard/! s/selinux/selinux,baseband_guard/ } }' security/Kconfig
 
+if [ "$KSU_ENABLE" -eq 1 ]; then
+    echo "Integrating SUSFS inline hook patches..."
+    curl -LSs "https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Build_2nd/refs/heads/mainline/Patches/susfs_inline_hook_patches.sh" -o susfs_inline_hook_patches.sh
+    chmod +x susfs_inline_hook_patches.sh
+    bash susfs_inline_hook_patches.sh
+    rm -f susfs_inline_hook_patches.sh
+fi
+
 echo "Cleaning..."
 
 rm -rf out/
