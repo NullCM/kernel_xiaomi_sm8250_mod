@@ -23,7 +23,7 @@ on:
           - dagu
           - pipa
       ksu:
-        description: 'Enable KernelSU (ReSukiSU-SuSFS)'
+        description: 'Enable KernelSU (BakaSU + SUSFS inline hook)'
         required: true
         type: boolean
         default: true
@@ -34,7 +34,10 @@ permissions:
 jobs:
   build:
     name: Build Kernel for ${{ inputs.device }} (${{ inputs.ksu && 'KSU' || 'NoKSU' }})
-    runs-on: ubuntu-latest
+    # [FIX-1] 不要用 ubuntu-latest：2026-11 起它指向 26.04，只有 libxml2.so.16。
+    #         noble(24.04) 是最后一个提供 libxml2.so.2 的 Ubuntu 版本。
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120            # [可选] 防止卡死占用 6 小时额度
 
     steps:
       - name: Checkout Source
@@ -52,8 +55,10 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
+          # [FIX-2] 末尾新增 libxml2：为预编译 ld.lld 提供 libxml2.so.2
+          #         apt 会自动带上 libicu 等依赖，无需手动处理
           sudo apt-get install -y build-essential git curl wget bison flex zip bc cpio \
-            libssl-dev libelf-dev ccache gawk python-is-python3
+            libssl-dev libelf-dev ccache gawk python-is-python3 libxml2
 
       - name: Setup Cache
         uses: actions/cache@v4
@@ -72,6 +77,38 @@ jobs:
           echo "c11341a58e15cebc4e25472291791ae6a5dceb3675c9dfde2cb035ad893b6ae0  Clang-16.0.6-20260807.tar.gz" | sha256sum -c -
           tar -zxf Clang-16.0.6-20260807.tar.gz
           rm -f Clang-16.0.6-20260807.tar.gz
+
+      # [可选] fail-fast 自检：任何工具链二进制缺动态库都在这里立刻报错，
+      #        而不是等 make 跑到 vdso_prepare 才吐 Error 127。整步可删。
+      - name: Verify Toolchain Runtime Deps
+        run: |
+          export PATH="$HOME/zyc-clang/bin:$PATH"
+          echo "== host =="
+          lsb_release -ds
+          echo "== libxml2 on host =="
+          ldconfig -p | grep libxml2 || true
+
+          fail=0
+          ESSENTIAL="clang ld.lld llvm-ar llvm-nm llvm-objcopy aarch64-linux-gnu-ld arm-linux-gnueabi-ld"
+          OPTIONAL="llvm-objdump llvm-strip"
+
+          for b in $ESSENTIAL; do
+            p=$(command -v "$b") || { echo "MISSING (required): $b"; fail=1; continue; }
+            if ldd "$p" 2>/dev/null | grep -q "not found"; then
+              echo "UNRESOLVED DEPS: $b"; ldd "$p"; fail=1
+            fi
+          done
+          for b in $OPTIONAL; do
+            p=$(command -v "$b") || { echo "MISSING (optional): $b"; continue; }
+            if ldd "$p" 2>/dev/null | grep -q "not found"; then
+              echo "WARN unresolved deps: $b"; ldd "$p"
+            fi
+          done
+
+          [ "$fail" -eq 0 ] || { echo "Toolchain not usable, aborting."; exit 1; }
+          clang --version | head -n1
+          ld.lld --version
+          aarch64-linux-gnu-ld --version | head -n1
 
       - name: Build Kernel
         run: |
